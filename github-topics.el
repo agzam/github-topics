@@ -22,14 +22,26 @@
 ;;; Code:
 
 (require 'ts)
+(require 'parse-time)
+(require 'thingatpt)
+
+(defgroup github-topics nil
+  "Lookup PRs matching a query."
+  :group 'github-topics)
 
 (defcustom github-topics-orgs nil
-  "Default GH Orgs to search for PRs"
-  :group 'jira
-  :type 'sexp)
+  "Default GH Orgs to search for PRs."
+  :group 'github-topics
+  :type '(repeat symbol))
+
+(defcustom github-topics-prs-buffer-hook nil
+  "Triggers on `github-topics-find-prs' buffer with the list of PRs.
+takes a single parameter - the buffer pointer."
+  :group 'github-topics
+  :type 'hook)
 
 (defun github-topics--time-ago (iso8601-time-str)
-  "Convert iso8601-time-str in the past - into relative time description."
+  "Convert ISO8601-TIME-STR in the past - into relative time description."
   (let* ((time-obj (parse-iso8601-time-string iso8601-time-str))
          (unix-timestamp (float-time time-obj))
          (diff (- (float-time) unix-timestamp)))
@@ -53,7 +65,7 @@ With an argument - open the query in the browser."
          (query-params (url-hexify-string (format "%s %s" orgs-str query-string)))
          (search-page-url (format "https://github.com/search?q=%s&type=pullrequests" query-params)))
     (if current-prefix-arg (browse-url search-page-url)
-      (let* ((gh (or (executable-find "gh") (user-error "'gh' cmd-line tool not found.")))
+      (let* ((gh (or (executable-find "gh") (user-error "'gh' cmd-line tool not found")))
              (fields (mapconcat
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
@@ -62,10 +74,10 @@ With an argument - open the query in the browser."
              (cmd-args (format "search prs %s \"%s\" --json \"%s\""
                                orgs-str query-string fields))
              (_ (message user-msg)))
-        (if-let ((res (thread-first
-                        gh (concat " " cmd-args)
-                        shell-command-to-string
-                        (json-parse-string :object-type 'alist))))
+        (if-let* ((res (thread-first
+                         gh (concat " " cmd-args)
+                         shell-command-to-string
+                         (json-parse-string :object-type 'alist))))
             (progn
               (let ((buf (get-buffer-create user-msg)))
                 (with-current-buffer buf
@@ -90,8 +102,8 @@ With an argument - open the query in the browser."
                                   "%s\n"
                                   (replace-regexp-in-string "\r" "" .body)))))))
                   (org-mode)
-                  (read-only-mode +1)
-                  (jinx-mode -1))
+                  (read-only-mode +1))
+                (run-hook-with-args 'github-topics-prs-buffer-hook buf)
                 (display-buffer buf)))
           (message (concat "No PRs for: " user-msg)))))))
 
