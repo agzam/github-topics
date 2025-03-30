@@ -29,7 +29,7 @@
   "Lookup PRs matching a query."
   :group 'github-topics)
 
-(defcustom github-topics-orgs nil
+(defcustom github-topics-default-orgs nil
   "Default GH Orgs to search for PRs."
   :group 'github-topics
   :type '(repeat symbol))
@@ -53,15 +53,21 @@ takes a single parameter - the buffer pointer."
 (defun github-topics-find-prs (&optional query-string orgs)
   "Find PRs in ORGS, containing QUERY-STRING.
 
-With an argument - open the query in the browser."
+With an argument - open the query in the browser.
+
+For searching in all of GitHub, ignoring `github-topics-default-orgs',
+set ORGS - `'none'."
   (interactive)
   (let* ((query-string (or query-string
                            (read-string "Search GitHub for: "
                                         (word-at-point))))
-         (orgs-user-readable (mapconcat (lambda (x) (format "'%s'" x)) github-topics-orgs " and "))
+         (orgs-user-readable (unless (eq orgs 'none)
+                               (mapconcat
+                                (lambda (x) (format "'%s'" x)) github-topics-default-orgs " and ")))
          (user-msg (format "Searching GitHub for '%s' in %s orgs" query-string orgs-user-readable))
-         (orgs-str (mapconcat (lambda (x) (concat "org:" x))
-                              (or orgs github-topics-orgs) " "))
+         (orgs-str (unless (eq orgs 'none)
+                     (mapconcat (lambda (x) (concat "org:" x))
+                                (or orgs github-topics-default-orgs) " ")))
          (query-params (url-hexify-string (format "%s %s" orgs-str query-string)))
          (search-page-url (format "https://github.com/search?q=%s&type=pullrequests" query-params)))
     (if current-prefix-arg (browse-url search-page-url)
@@ -69,8 +75,9 @@ With an argument - open the query in the browser."
              (fields (mapconcat
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
-             (orgs-str (mapconcat (lambda (x) (concat "--owner " x))
-                                  (or nil github-topics-orgs) " "))
+             (orgs-str (unless (eq orgs 'none)
+                         (mapconcat (lambda (x) (concat "--owner " x))
+                                    (or nil github-topics-default-orgs) " ")))
              (cmd-args (format "search prs %s \"%s\" --json \"%s\""
                                orgs-str query-string fields))
              (_ (message user-msg)))
