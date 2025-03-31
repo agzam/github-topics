@@ -39,4 +39,11 @@ config.el
 
 - Typically, you'd be searching within specified GitHub orgs. You can set them as shown in the previous section.
  
-- There's a hook ~github-topics-prs-buffer-hook~ you can set, it gets triggered when the buffer with the list of PRs gets open.
+- There's a hook ~github-topics-prs-buffer-hook~ you can set, it gets triggered when the buffer with the list of PRs gets open, you can use it, for example to disable the spellchecker:
+
+#+begin_src emacs-lisp
+(defun on-github-topics-prs-buffer-h (buf)
+  (jinx-mode -1))
+
+(add-hook 'github-topics-prs-buffer-hook 'on-github-topics-prs-buffer-h)
+#+end_src
