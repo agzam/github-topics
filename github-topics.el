@@ -32,7 +32,7 @@
 (defcustom github-topics-default-orgs nil
   "Default GH Orgs to search for PRs."
   :group 'github-topics
-  :type '(repeat string))
+  :type '(repeat symbol))
 
 (defcustom github-topics-prs-buffer-hook nil
   "Triggers on `github-topics-find-prs' buffer with the list of PRs.
@@ -69,7 +69,7 @@ set ORGS - `'none'."
          (orgs-str (if (eq orgs 'none) ""
                      (thread-last
                        (or orgs github-topics-default-orgs)
-                       (seq-map (lambda (x) (concat "org: " x)))
+                       (seq-map (lambda (x) (format "org: %s" x)))
                        (funcall (lambda (s) (if (length< s 1) ""
                                               (concat (string-join s " ") " ")))))))
          (query-params (url-hexify-string (concat orgs-str query-string)))
@@ -80,7 +80,7 @@ set ORGS - `'none'."
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
              (orgs-str (unless (eq orgs 'none)
-                         (mapconcat (lambda (x) (concat "--owner " x))
+                         (mapconcat (lambda (x) (format "--owner %s" x))
                                     (or nil github-topics-default-orgs) " ")))
              (cmd-args (format "search prs %s \"%s\" --json \"%s\""
                                orgs-str query-string fields))
@@ -113,7 +113,8 @@ set ORGS - `'none'."
                                   "%s\n"
                                   (replace-regexp-in-string "\r" "" .body)))))))
                   (org-mode)
-                  (read-only-mode +1))
+                  (read-only-mode +1)
+                  (goto-char (point-min)))
                 (run-hook-with-args 'github-topics-prs-buffer-hook buf)
                 (display-buffer buf)))
           (message (concat "No PRs for: " user-msg)))))))
