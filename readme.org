@@ -8,11 +8,13 @@ Search through GitHub for a matching string. Currently only supports searching f
 
 ** Why
 
-I needed to explore large Jira Epic with a bunch of tickets in it, and I needed a nice and quick way of finding "all PRs mentioning a specific ticket number".
+I needed to explore large Jira Epic with a bunch of tickets in it (and I have the list of tickets in my notes already); I just needed a nice and quick way of finding "all PRs mentioning a specific ticket number".
 
 ** How
 
-This is a relatively simple package that (currently) does one and only thing – you give it a search string, and it tries to find all Pull Requests on GitHub matching that string, and then displays it in a nice Org-mode formatted buffer.
+This is a relatively simple package that (currently) does one and only thing – there's a single command - ~(github-topics-find-prs)~. You give it a search string, and it tries to find all Pull Requests on GitHub matching that string, and then displays it in a nice Org-mode formatted buffer.
+
+When universal arg is provided (called with ~C-u~) - it opens the search page in the browser.
 
 *** Prerequisites
 
