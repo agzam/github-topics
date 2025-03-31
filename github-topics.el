@@ -34,6 +34,15 @@
   :group 'github-topics
   :type '(repeat symbol))
 
+(defcustom github-topics-convert-body-with-pandoc t
+  "Convert body of pull-request to `org-mode'.
+If nil - keeps the body in markdown - might be slightly faster.
+Can be set to the explicit path to pandoc in the system."
+  :group 'github-topics
+  :type '(choice
+          (boolean :tag "Use default pandoc if available")
+          (string :tag "Explicit path to pandoc executable")))
+
 (defcustom github-topics-prs-buffer-hook nil
   "Triggers on `github-topics-find-prs' buffer with the list of PRs.
 takes a single parameter - the buffer pointer."
@@ -50,6 +59,44 @@ takes a single parameter - the buffer pointer."
      (t (concat (car (split-string (ts-human-format-duration diff) ","))
                 " ago")))))
 
+(defun github-topics--body->org (body)
+  "Converts the BODY of GitHub Pull-Request to Org-mode format.
+
+The conversion works only if pandoc is detected in the system, otherwise
+it wraps it into a source block."
+  (with-temp-buffer
+    (if-let* ((pandoc (unless (null github-topics-convert-body-with-pandoc)
+                        (if (stringp github-topics-convert-body-with-pandoc)
+                            github-topics-convert-body-with-pandoc
+                          (executable-find "pandoc")))))
+        (progn
+          (insert body)
+          (shell-command-on-region
+           (point-min)
+           (point-max)
+           (concat pandoc " --wrap=none -f markdown -t org")
+           nil t)
+
+          ;; remove all property drawers
+          (goto-char (point-min))
+          (while (re-search-forward "^[ \t]*:PROPERTIES:\n\\(?:.*\n\\)*?[ \t]*:END:\n" nil t)
+            (replace-match ""))
+
+          ;; increase outline levels to match the main doc
+          (let ((level-increase 2))
+            (goto-char (point-min))
+            (while (re-search-forward "^\\(\\*+\\)\\( \\)" nil t)
+              (replace-match
+               (concat
+                (make-string (+ (length (match-string 1)) level-increase) ?*)
+                "\\2")))))
+      (progn
+        (insert (replace-regexp-in-string "\r" "" body))
+        (goto-char (point-max))
+        (insert (format "\n#+end_src\n"))
+        (goto-char (point-min))
+        (insert (format "#+begin_src markdown\n"))))
+    (buffer-substring (point-min) (point-max))))
 
 (defun github-topics-find-prs (&optional query-string orgs)
   "Find PRs in ORGS, containing QUERY-STRING.
@@ -109,9 +156,7 @@ set ORGS - `'none'."
                                        .author.url
                                        .author.login
                                        (github-topics--time-ago .createdAt)))
-                       (insert (format
-                                "%s\n"
-                                (replace-regexp-in-string "\r" "" .body)))))))
+                       (insert (github-topics--body->org .body))))))
                 (org-mode)
                 (read-only-mode +1)
                 (goto-char (point-min)))

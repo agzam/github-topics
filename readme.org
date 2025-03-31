@@ -37,13 +37,20 @@ config.el
 
 *** Customization
 
-- Typically, you'd be searching within specified GitHub orgs. You can set them as shown in the previous section.
+- Typically, you'd be searching within specified GitHub orgs. You can set them as shown in the previous section by customizing ~github-topics-default-orgs~
  
 - There's a hook ~github-topics-prs-buffer-hook~ you can set, it gets triggered when the buffer with the list of PRs gets open, you can use it, for example to disable the spellchecker:
 
-#+begin_src emacs-lisp
-(defun on-github-topics-prs-buffer-h (buf)
-  (jinx-mode -1))
+  #+begin_src emacs-lisp
+  (defun on-github-topics-prs-buffer-h (buf)
+    (jinx-mode -1))
 
-(add-hook 'github-topics-prs-buffer-hook 'on-github-topics-prs-buffer-h)
+  (add-hook 'github-topics-prs-buffer-hook 'on-github-topics-prs-buffer-h)
+  #+end_src
+
+- If ~github-topics-convert-body-with-pandoc~ set to ~t~ (default) and Emacs can find [[https://pandoc.org/][pandoc]], it will convert the body of Pull-Request to Org-mode format. If you'd like to keep the body as Markdown, you can set it to ~nil~.
+  You can also set the path to pandoc explicitly (if Emacs for some reason can't locate it automatically), e.g.:
+
+#+begin_src emacs-lisp
+  (setopt github-topics-convert-body-with-pandoc "/urs/bin/local/pandoc")
 #+end_src
