@@ -62,7 +62,7 @@
       (funcall-interactively 'github-topics-find-prs "foo"))
     (expect 'browse-url :to-have-been-called-with
             (format "https://github.com/search?q=%s&type=pullrequests"
-                    (url-hexify-string "org: my-org foo")))))
+                    (url-hexify-string "org:my-org foo")))))
 
 (describe "when called orgs=none"
   (it "should ignore github-topics-default-orgs and search in all of GitHub"

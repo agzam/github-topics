@@ -70,7 +70,7 @@ set ORGS - `'none'."
          (orgs-str (if (eq orgs 'none) ""
                      (thread-last
                        (or orgs github-topics-default-orgs)
-                       (seq-map (lambda (x) (format "org: %s" x)))
+                       (seq-map (lambda (x) (format "org:%s" x)))
                        (funcall (lambda (s) (if (length< s 1) ""
                                               (concat (string-join s " ") " ")))))))
          (query-params (url-hexify-string (concat orgs-str query-string)))
@@ -90,34 +90,33 @@ set ORGS - `'none'."
                          gh (concat " " cmd-args)
                          shell-command-to-string
                          (json-parse-string :object-type 'alist))))
-            (progn
-              (let ((buf (get-buffer-create user-msg)))
-                (with-current-buffer buf
-                  (erase-buffer)
-                  (insert
-                   (format "[[elisp:(browse-url \"%s\")][%s]]\n\n"
-                           search-page-url
-                           user-msg))
-                  (thread-last
-                    res
-                    (seq-do
-                     (lambda (rec)
-                       (let-alist rec
-                         (insert (format "* %s\n" .repository.nameWithOwner))
-                         (insert (format "** [[%s][%s #%s]]\n" .url .title .number))
-                         (insert (format "%s by: [[%s][%s]] %s\n\n"
-                                         (upcase .state)
-                                         .author.url
-                                         .author.login
-                                         (github-topics--time-ago .createdAt)))
-                         (insert (format
-                                  "%s\n"
-                                  (replace-regexp-in-string "\r" "" .body)))))))
-                  (org-mode)
-                  (read-only-mode +1)
-                  (goto-char (point-min)))
-                (run-hook-with-args 'github-topics-prs-buffer-hook buf)
-                (display-buffer buf)))
+            (let ((buf (get-buffer-create (format "*%s*" user-msg))))
+              (with-current-buffer buf
+                (erase-buffer)
+                (insert
+                 (format "[[%s][%s]]\n\n"
+                         search-page-url
+                         user-msg))
+                (thread-last
+                  res
+                  (seq-do
+                   (lambda (rec)
+                     (let-alist rec
+                       (insert (format "* %s\n" .repository.nameWithOwner))
+                       (insert (format "** [[%s][%s #%s]]\n" .url .title .number))
+                       (insert (format "%s by: [[%s][%s]] %s\n\n"
+                                       (upcase .state)
+                                       .author.url
+                                       .author.login
+                                       (github-topics--time-ago .createdAt)))
+                       (insert (format
+                                "%s\n"
+                                (replace-regexp-in-string "\r" "" .body)))))))
+                (org-mode)
+                (read-only-mode +1)
+                (goto-char (point-min)))
+              (run-hook-with-args 'github-topics-prs-buffer-hook buf)
+              (pop-to-buffer buf))
           (message (concat "No PRs for: " user-msg)))))))
 
 (provide 'github-topics)
