@@ -25,8 +25,7 @@
 (require 'github-topics)
 
 (describe "github-topics--time-ago"
-  (dolist (test-case '(
-                       ;; (seconds-ago expected-result)
+  (dolist (test-case '(;; (seconds-ago expected-result)
                        ((* 4 24 60 60) "4 days ago")
                        ((* 1 60 60)    "1 hours ago")
                        ((* 5 60)       "5 minutes ago")
@@ -40,15 +39,37 @@
           (expect (github-topics--time-ago time-str)
                   :to-equal expected))))))
 
-;; (describe "if no query string"
-;;   (it "prompts for one"
-;;     (spy-on 'word-at-point :and-return-value "tayster-shmeister")
-;;     ;; (spy-on 'read-string :to-have-been-called-with "Search GitHub for: "  "tayster-shmeister")
-;;     (before-each
-;;      (setf (symbol-function 'read-string)
-;;            (lambda (prompt &optional initial-input history default-value inherit-input-method)
-;;              (message "TIS RUNNING")
-;;              ;; (user-error "boom")
-;;              )))
+(describe "if no query string"
+  :var (read-string)
+  (it "prompts for one"
+    (spy-on 'word-at-point :and-return-value "tayster-shmeister")
+    (spy-on 'read-string :and-return-value "tayster-shmeister")
+    (spy-on 'shell-command-to-string :and-return-value "[]")
+    (github-topics-find-prs)
+    (expect 'read-string :to-have-been-called-with "Search GitHub for: " "tayster-shmeister")))
 
-;;     (expect (github-topics-find-prs) :to-equal nil)))
+(describe "when no gh found"
+  (it "throws an error"
+    (spy-on 'read-string :and-return-value "foo")
+    (spy-on 'executable-find :and-return-value nil)
+    (expect (github-topics-find-prs) :to-throw 'error)))
+
+(describe "when called with an argument"
+  (it "browse-url with correct url-string"
+    (spy-on 'browse-url)
+    (let ((current-prefix-arg '(4))
+          (github-topics-default-orgs '("my-org")))
+      (funcall-interactively 'github-topics-find-prs "foo"))
+    (expect 'browse-url :to-have-been-called-with
+            (format "https://github.com/search?q=%s&type=pullrequests"
+                    (url-hexify-string "org: my-org foo")))))
+
+(describe "when called orgs=none"
+  (it "should ignore github-topics-default-orgs and search in all of GitHub"
+    (spy-on 'url-hexify-string)
+    (spy-on 'browse-url)
+    (spy-on 'executable-find :and-return-value "gh")
+    (let ((current-prefix-arg '(4))
+          (github-topics-default-orgs '("my-org")))
+      (funcall-interactively 'github-topics-find-prs "foo" 'none))
+    (expect 'url-hexify-string :to-have-been-called-with "foo")))

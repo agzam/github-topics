@@ -32,7 +32,7 @@
 (defcustom github-topics-default-orgs nil
   "Default GH Orgs to search for PRs."
   :group 'github-topics
-  :type '(repeat symbol))
+  :type '(repeat string))
 
 (defcustom github-topics-prs-buffer-hook nil
   "Triggers on `github-topics-find-prs' buffer with the list of PRs.
@@ -50,6 +50,7 @@ takes a single parameter - the buffer pointer."
      (t (concat (car (split-string (ts-human-format-duration diff) ","))
                 " ago")))))
 
+
 (defun github-topics-find-prs (&optional query-string orgs)
   "Find PRs in ORGS, containing QUERY-STRING.
 
@@ -65,10 +66,13 @@ set ORGS - `'none'."
                                (mapconcat
                                 (lambda (x) (format "'%s'" x)) github-topics-default-orgs " and ")))
          (user-msg (format "Searching GitHub for '%s' in %s orgs" query-string orgs-user-readable))
-         (orgs-str (unless (eq orgs 'none)
-                     (mapconcat (lambda (x) (concat "org:" x))
-                                (or orgs github-topics-default-orgs) " ")))
-         (query-params (url-hexify-string (format "%s %s" orgs-str query-string)))
+         (orgs-str (if (eq orgs 'none) ""
+                     (thread-last
+                       (or orgs github-topics-default-orgs)
+                       (seq-map (lambda (x) (concat "org: " x)))
+                       (funcall (lambda (s) (if (length< s 1) ""
+                                              (concat (string-join s " ") " ")))))))
+         (query-params (url-hexify-string (concat orgs-str query-string)))
          (search-page-url (format "https://github.com/search?q=%s&type=pullrequests" query-params)))
     (if current-prefix-arg (browse-url search-page-url)
       (let* ((gh (or (executable-find "gh") (user-error "'gh' cmd-line tool not found")))
