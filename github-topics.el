@@ -62,7 +62,8 @@ set ORGS - `'none'."
   (let* ((query-string (or query-string
                            (read-string "Search GitHub for: "
                                         (word-at-point))))
-         (orgs-user-readable (unless (eq orgs 'none)
+         (orgs-user-readable (if (eq orgs 'none)
+                                 "all"
                                (mapconcat
                                 (lambda (x) (format "'%s'" x)) github-topics-default-orgs " and ")))
          (user-msg (format "Searching GitHub for '%s' in %s orgs" query-string orgs-user-readable))
@@ -79,7 +80,7 @@ set ORGS - `'none'."
              (fields (mapconcat
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
-             (orgs-str (unless (eq orgs 'none)
+             (orgs-str (if (eq orgs 'none) ""
                          (mapconcat (lambda (x) (format "--owner %s" x))
                                     (or nil github-topics-default-orgs) " ")))
              (cmd-args (format "search prs %s \"%s\" --json \"%s\""

@@ -1,0 +1,42 @@
+#+title: github-topics.el
+
+** What
+
+Search through GitHub for a matching string. Currently only supports searching for PRs.
+
+[[./screenshot.png]]
+
+** Why
+
+I needed to explore large Jira Epic with a bunch of tickets in it, and I needed a nice and quick way of finding "all PRs mentioning a specific ticket number".
+
+** How
+
+This is a relatively simple package that (currently) does one and only thing – you give it a search string, and it tries to find all Pull Requests on GitHub matching that string, and then displays it in a nice Org-mode formatted buffer.
+
+*** Prerequisites
+
+It uses [[https://cli.github.com/][GitHub CLI]] to retrieve data and it assumes that it is correctly authenticated, and the token permissions for Orgs listed in ~github-topics-default-orgs~ are correctly set.
+
+*** Installation
+
+It's not published to MELPA or other repositories at the moment, so you'd have to grab it from GitHub directly. Use your preferred method of package management. Here's how it could be set for Doom Emacs:
+
+packages.el
+#+begin_src emacs-lisp
+(package! github-topics :recipe (:host github :repo "agzam/github-topics"))
+#+end_src
+
+config.el
+#+begin_src emacs-lisp
+(use-package! github-topics
+  :defer t
+  :config
+  (setopt github-topics-default-orgs '(nasa apache my-other-work-org)))
+#+end_src*** Customizing
+
+*** Customization
+
+- Typically, you'd be searching within specified GitHub orgs. You can set them as shown in the previous section.
+ 
+- There's a hook ~github-topics-prs-buffer-hook~ you can set, it gets triggered when the buffer with the list of PRs gets open.
