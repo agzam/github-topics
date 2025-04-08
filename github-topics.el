@@ -11,13 +11,15 @@
 ;; Homepage: https://github.com/agzam/github-topics
 ;; Package-Requires: ((emacs "29.4") (ts "0.3"))
 ;;
+;; SPDX-License-Identifier: GPL-3.0-or-later
+;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
 ;;
-;;  Description
-;;
-;;  For finding Pull-Requests on GitHub using 'gh' command-line tool.
+;; Search through GitHub for a matching string or other criteria.
+;; Uses gh cli to send the query and puts the results into a nice
+;; org-mode outlined buffer.
 ;;
 ;;; Code:
 
@@ -66,7 +68,7 @@ takes a single parameter - the buffer pointer."
 The conversion works only if pandoc is detected in the system, otherwise
 it wraps it into a source block."
   (with-temp-buffer
-    (if-let* ((pandoc (unless (null github-topics-convert-body-with-pandoc)
+    (if-let* ((pandoc (when github-topics-convert-body-with-pandoc
                         (if (stringp github-topics-convert-body-with-pandoc)
                             github-topics-convert-body-with-pandoc
                           (executable-find "pandoc")))))
