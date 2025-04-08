@@ -16,7 +16,7 @@ This is a relatively simple package that (currently) does one and only thing –
 
 When universal arg is provided (called with ~C-u~) - it opens the search page in the browser, without creating a buffer in Emacs.
 
-You can additionally pass other gh CLI parameters, and they *must* be separated by =" -- "=.
+You can additionally pass other gh CLI parameters, and they *must* be separated from the search query (which can be blank) by =" -- "=.
 
 Examples:
 
@@ -32,7 +32,9 @@ bugfixing -- --state open
 bullshit -- --match comments
 
 etc.
-see 'gh search prs --help' for more.
+
+to learn more, do 'gh search prs --help' in the terminal, or simply run the command with:
+'-- --help' - it will show the same thing in the *Messages* buffer.
 #+end_src
 
 
@@ -69,6 +71,8 @@ config.el
 
   (add-hook 'github-topics-prs-buffer-hook 'on-github-topics-prs-buffer-h)
   #+end_src
+
+  or expand/collapse sections programmatically, or manipulate the buffer content in any way you like.
 
 - If ~github-topics-convert-body-with-pandoc~ set to ~t~ (default) and Emacs can find [[https://pandoc.org/][pandoc]], it will convert the body of Pull-Request to Org-mode format. If you'd like to keep the body as Markdown, you can set it to ~nil~.
   You can also set the path to pandoc explicitly (if Emacs for some reason can't locate it automatically), e.g.:

@@ -143,8 +143,8 @@ set ORGS - `'none'."
       (let* ((fields (mapconcat
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
-             (cmd-args (format "search prs %s \"%s\" --json \"%s\""
-                               orgs-str query-string fields))
+             (cmd-args (format "search prs %s \"%s\" %s --json \"%s\""
+                               orgs-str query-string extra-params fields))
              (_ (message user-msg)))
         (if-let* ((res (thread-first
                          gh (concat " " cmd-args)
@@ -152,11 +152,13 @@ set ORGS - `'none'."
                          (json-parse-string :object-type 'alist))))
             (let ((buf (get-buffer-create (format "*%s*" user-msg))))
               (with-current-buffer buf
+                (read-only-mode -1)
                 (erase-buffer)
                 (insert
-                 (format "[[%s][%s]]\n\n"
+                 (format "[[%s][%s]]\n"
                          search-page-url
                          user-msg))
+                (insert "#+STARTUP: show2levels\n\n")
                 (thread-last
                   res
                   (seq-do
@@ -169,7 +171,8 @@ set ORGS - `'none'."
                                        .author.url
                                        .author.login
                                        (github-topics--time-ago .createdAt)))
-                       (insert (github-topics--body->org .body))))))
+                       (insert (github-topics--body->org .body))
+                       (insert "\n")))))
                 (org-mode)
                 (read-only-mode +1)
                 (goto-char (point-min)))
