@@ -120,7 +120,7 @@ set ORGS - `'none'."
                                           (word-at-point)))
                          (split-string "-- " nil " +")))
          (query-string (cl-first query+params))
-         (extra-params (cl-first (cl-rest query+params)))
+         (extra-params (or (cl-first (cl-rest query+params)) ""))
          (orgs-user-readable (if (eq orgs 'none)
                                  "all"
                                (mapconcat

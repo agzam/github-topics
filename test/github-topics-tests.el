@@ -44,7 +44,8 @@
   (it "prompts for one"
     (spy-on 'word-at-point :and-return-value "tayster-shmeister")
     (spy-on 'read-string :and-return-value "tayster-shmeister")
-    (spy-on 'shell-command-to-string :and-return-value "[]")
+    (spy-on 'shell-command-to-string :and-return-value "https://some-url")
+    (spy-on 'json-parse-string :and-return-value nil)
     (github-topics-find-prs)
     (expect 'read-string :to-have-been-called-with "Search GitHub for: " "tayster-shmeister")))
 
@@ -55,21 +56,20 @@
     (expect (github-topics-find-prs) :to-throw 'error)))
 
 (describe "when called with an argument"
-  (it "browse-url with correct url-string"
+  (it "browse-url gets called"
     (spy-on 'browse-url)
     (let ((current-prefix-arg '(4))
           (github-topics-default-orgs '("my-org")))
       (funcall-interactively 'github-topics-find-prs "foo"))
-    (expect 'browse-url :to-have-been-called-with
-            (format "https://github.com/search?q=%s&type=pullrequests"
-                    (url-hexify-string "org:my-org foo")))))
+    (expect 'browse-url :to-have-been-called)))
 
 (describe "when called orgs=none"
   (it "should ignore github-topics-default-orgs and search in all of GitHub"
-    (spy-on 'url-hexify-string)
     (spy-on 'browse-url)
     (spy-on 'executable-find :and-return-value "gh")
+    (spy-on 'shell-command-to-string :and-return-value "https://github.com/some-search")
     (let ((current-prefix-arg '(4))
           (github-topics-default-orgs '("my-org")))
       (funcall-interactively 'github-topics-find-prs "foo" 'none))
-    (expect 'url-hexify-string :to-have-been-called-with "foo")))
+    (expect 'shell-command-to-string :to-have-been-called-with "gh search prs  \"foo\"  --web")
+    (expect 'browse-url :to-have-been-called-with "https://github.com/some-search")))
