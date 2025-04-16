@@ -104,14 +104,14 @@ it wraps it into a source block."
 (defun github-topics-find-prs (&optional query-string orgs)
   "Find PRs in ORGS, containing QUERY-STRING.
 
-With an argument - open the query in the browser.
+With a universal argument - open the query in the browser.
+
+With two - ignore `github-topics-default-orgs', effectively searching on
+all of GitHub; same as calling the function with ORGS = `'none'.
 
 QUERY-STRING parameter may contain not only the search query but
 additional `gh CLI` options as well, e.g. `--sort created`.
-Search query and extra arguments always must be separated by ' -- '.
-
-For searching in all of GitHub, ignoring `github-topics-default-orgs',
-set ORGS - `'none'."
+Search query and extra arguments always must be separated by ' -- '."
   (interactive)
   (let* ((query+params (thread-first
                          query-string
@@ -121,17 +121,20 @@ set ORGS - `'none'."
                          (split-string "-- " nil " +")))
          (query-string (cl-first query+params))
          (extra-params (or (cl-first (cl-rest query+params)) ""))
+         (orgs (if (eq 16 (car current-prefix-arg))
+                   'none (or orgs github-topics-default-orgs)))
          (orgs-user-readable (if (eq orgs 'none)
                                  "all"
                                (mapconcat
-                                (lambda (x) (format "'%s'" x)) github-topics-default-orgs " and ")))
+                                (lambda (x) (format "'%s'" x)) orgs " and ")))
          (user-msg (format "Searching GitHub for '%s' in %s orgs %s"
                            query-string orgs-user-readable
-                           (if extra-params (format "with parameters %s" extra-params) "")))
+                           (if (string-blank-p extra-params) ""
+                             (format "with parameters %s" extra-params))))
          (gh (or (executable-find "gh") (user-error "'gh' cmd-line tool not found")))
          (orgs-str (if (eq orgs 'none) ""
                      (mapconcat (lambda (x) (format "--owner %s" x))
-                                (or nil github-topics-default-orgs) " ")))
+                                orgs " ")))
          (search-page-url (let* ((web-cmd (format "%s search prs %s \"%s\" %s --web" gh orgs-str query-string extra-params))
                                  (process-environment (append '("BROWSER=echo") process-environment)))
                             (string-trim (shell-command-to-string web-cmd)))))
@@ -139,7 +142,7 @@ set ORGS - `'none'."
       (user-error "Query and arguments must be separated by ' -- '"))
     (unless (url-type (url-generic-parse-url search-page-url))
       (user-error "Error: '%s'" search-page-url))
-    (if current-prefix-arg (browse-url search-page-url)
+    (if (eq 4 (car current-prefix-arg)) (browse-url search-page-url)
       (let* ((fields (mapconcat
                       #'symbol-name
                       '(title url repository author number state createdAt body) ","))
