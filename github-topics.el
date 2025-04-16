@@ -161,23 +161,27 @@ set ORGS - `'none'."
                 (insert "#+STARTUP: show2levels\n\n")
                 (thread-last
                   res
+                  (seq-group-by (lambda (rec)
+                                  (let-alist rec .repository.nameWithOwner)))
                   (seq-do
-                   (lambda (rec)
-                     (let-alist rec
-                       (insert (format "* %s\n" .repository.nameWithOwner))
-                       (insert (format "** [[%s][%s #%s]]\n" .url .title .number))
-                       (insert (format "%s by: [[%s][%s]] %s\n\n"
-                                       (upcase .state)
-                                       .author.url
-                                       .author.login
-                                       (github-topics--time-ago .createdAt)))
-                       (insert (github-topics--body->org .body))
-                       (insert "\n")))))
+                   (lambda (group)
+                     (insert (format "* %s\n" (car group)))
+                     (dolist (rec (cdr group))
+                       (let-alist (cl-rest rec)
+                         (insert (format "** [[%s][%s #%s]]\n" .url .title .number))
+                         (insert (format "%s by: [[%s][%s]] %s\n\n"
+                                         (upcase .state)
+                                         .author.url
+                                         .author.login
+                                         (github-topics--time-ago .createdAt)))
+                         (insert (github-topics--body->org .body))
+                         (insert "\n")))
+                     (insert "\n"))))
                 (org-mode)
                 (read-only-mode +1)
-                (goto-char (point-min)))
-              (run-hook-with-args 'github-topics-prs-buffer-hook buf)
-              (pop-to-buffer buf))
+                (goto-char (point-min))
+                (run-hook-with-args 'github-topics-prs-buffer-hook buf)
+                (pop-to-buffer buf)))
           (message (concat "No PRs for: " user-msg)))))))
 
 (provide 'github-topics)
